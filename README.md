@@ -7,8 +7,11 @@
 ```bat
 limo.cmd build        构建到 dist/
 limo.cmd dev          构建并起本地预览 → http://127.0.0.1:4321/zh/
+limo.cmd ship "说明"   构建 + 提交 + 推送，GitHub Actions 自动发布
 new.cmd zh "标题"      新建一篇文章（zh / ja / en）
 ```
+
+线上地址：<https://knffx.github.io/limo/>
 
 > 这台机器没有全局 Node，`limo.cmd` 和 `new.cmd` 里指向的是 DSH 自带的运行时
 > `D:\DSH\resources\runtime\primary-runtime\dependencies\node\bin\node.exe`。
@@ -50,6 +53,35 @@ new.cmd ja "今日も何もできなかった" --translated
 
 `src/i18n.mjs`。首页那句话、按钮、空状态都在这儿。
 
+## 发布
+
+仓库 `knffx/limo`（public），Pages 走 GitHub Actions：push 到 `main` 后
+`.github/workflows/pages.yml` 里 `node tools/build.mjs` 构建 `dist/`，再作为
+Pages artifact 发布。站点根在 `https://knffx.github.io/limo/`，所以站内链接全部
+用相对路径（`../`、`lab/`），换到任何子路径下都能跑。
+
+日常只有一条命令：
+
+```bat
+limo.cmd ship "改了什么"
+```
+
+它做三件事：本地构建（构建失败就不推）→ `git add -A` + commit → `git push`。
+
+第一次配环境时才需要这些（已经配好，重装机器时看）：
+
+```bat
+gh auth login                                   :: 授权
+gh repo create knffx/limo --public --source=. --remote=origin
+gh api -X POST repos/knffx/limo/pages -f build_type=workflow
+```
+
+> 注意：这台机器上 git 调用任何 credential helper 都会走 `sh.exe`，在某些沙箱里
+> 起不来。所以 `https://github.com` 的认证 token 以 base64 写在 `.git/config` 的
+> `http.extraheader` 里（不进版本库、不随仓库分发）。想换掉就重跑：
+> `git config --local http.https://github.com/.extraheader "AUTHORIZATION: basic <base64(x-access-token:TOKEN)>"`，
+> 或直接删掉那一行改回 credential helper。
+
 ## 一点设计约定
 
 - **全站纯色**：不铺渐变、不铺纹理。底色只有三种——纯黑、满屏角色色、纸白。
@@ -63,5 +95,4 @@ new.cmd ja "今日も何もできなかった" --translated
 
 ## 还没做的
 
-- 部署：没有 git。下一步要么装 git，要么用 `dugite`（npm 包里自带 git 二进制）。
 - OG 卡片图、RSS、评论。都还没做。

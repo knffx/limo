@@ -21,7 +21,7 @@ goto end
 goto end
 
 :ship
-rem 构建检查 → 提交 → 推送。GitHub Actions 接着构建并发布到 Pages。
+rem build check -> commit -> push. GitHub Actions then builds and deploys Pages.
 cd /d "%~dp0"
 "%NODE_EXE%" "tools\build.mjs" || goto shipfail
 git add -A
